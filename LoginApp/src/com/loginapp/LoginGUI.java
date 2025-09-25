@@ -60,7 +60,7 @@ public class LoginGUI extends JFrame {
             if (rs.next()) {
                 JOptionPane.showMessageDialog(this, "Login Successful!");
             } else {
-                JOptionPane.showMessageDialog(this, "Invalid Username or Password");
+                JOptionPane.showMessageDialog(this, "Invalid Username rkrfjnerkfmnrekoor Password");
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
