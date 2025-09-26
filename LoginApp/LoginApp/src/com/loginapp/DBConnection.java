@@ -27,7 +27,7 @@ public class DBConnection {
         if (getConnection() != null) {
             System.out.println("Database Connected!");
         } else {
-            System.out.println("Connectidbijhbijbbfsefson Failed!");
+            System.out.println("Connection Failed!");
         }
     }
 }
