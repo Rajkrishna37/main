@@ -8,13 +8,13 @@ public class LoginGUI extends JFrame {
 
     private JTextField usernameField;
     private JPasswordField passwordField;
-    private JButton loginButton, registerButton, backButton, submitRegisterButton;
-
-    private JPanel mainPanel; // container for switching screens
+    private JButton loginButton, backButton, submitRegisterButton;
+    private JPanel mainPanel;
+    private JComboBox<String> roleBox;  // NEW: Role selection
 
     public LoginGUI() {
         setTitle("Campus Forge");
-        setExtendedState(JFrame.MAXIMIZED_BOTH); // Full screen
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -22,22 +22,20 @@ public class LoginGUI extends JFrame {
         mainPanel.setBackground(Color.BLACK);
 
         // Screens
-        JPanel choicePanel = createChoicePanel();   // First screen (Login | Register choice)
-        JPanel loginPanel = createLoginPanel();     // Login screen
-        JPanel registerPanel = createRegisterPanel(); // Register screen
+        JPanel choicePanel = createChoicePanel();
+        JPanel loginPanel = createLoginPanel();
+        JPanel registerPanel = createRegisterPanel();
 
         mainPanel.add(choicePanel, "choice");
         mainPanel.add(loginPanel, "login");
         mainPanel.add(registerPanel, "register");
 
         setContentPane(mainPanel);
-
         showScreen("choice");
-
         setVisible(true);
     }
 
-    // ---------- First Screen ----------
+    // ---------- Choice Screen ----------
     private JPanel createChoicePanel() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(Color.BLACK);
@@ -81,6 +79,12 @@ public class LoginGUI extends JFrame {
         titleLabel.setFont(new Font("Serif", Font.BOLD, 36));
         titleLabel.setForeground(Color.WHITE);
 
+        JLabel roleLabel = new JLabel("Login as:");
+        roleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        roleLabel.setForeground(Color.WHITE);
+
+        roleBox = new JComboBox<>(new String[]{"User", "Admin"}); // choose role
+
         JLabel userLabel = new JLabel("Username:");
         userLabel.setFont(new Font("Arial", Font.BOLD, 18));
         userLabel.setForeground(Color.WHITE);
@@ -113,20 +117,26 @@ public class LoginGUI extends JFrame {
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(15, 15, 15, 15);
+
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
         panel.add(titleLabel, gbc);
 
         gbc.gridy = 1; gbc.gridwidth = 1;
+        panel.add(roleLabel, gbc);
+        gbc.gridx = 1;
+        panel.add(roleBox, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2;
         panel.add(userLabel, gbc);
         gbc.gridx = 1;
         panel.add(usernameField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridx = 0; gbc.gridy = 3;
         panel.add(passLabel, gbc);
         gbc.gridx = 1;
         panel.add(passwordField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridx = 0; gbc.gridy = 4;
         panel.add(backButton, gbc);
         gbc.gridx = 1;
         panel.add(loginButton, gbc);
@@ -139,7 +149,7 @@ public class LoginGUI extends JFrame {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(Color.BLACK);
 
-        JLabel titleLabel = new JLabel("Register");
+        JLabel titleLabel = new JLabel("Register (Users Only)");
         titleLabel.setFont(new Font("Serif", Font.BOLD, 36));
         titleLabel.setForeground(Color.WHITE);
 
@@ -229,20 +239,26 @@ public class LoginGUI extends JFrame {
     private void login() {
         String username = usernameField.getText();
         String password = new String(passwordField.getPassword());
+        String role = (String) roleBox.getSelectedItem();
 
         try (Connection con = DBConnection.getConnection()) {
-            String sql = "SELECT * FROM users WHERE username=? AND password=?";
+            String sql;
+            if ("Admin".equals(role)) {
+                sql = "SELECT * FROM admins WHERE username=? AND password=?";
+            } else {
+                sql = "SELECT * FROM users WHERE username=? AND password=?";
+            }
+
             PreparedStatement pst = con.prepareStatement(sql);
             pst.setString(1, username);
             pst.setString(2, password);
             ResultSet rs = pst.executeQuery();
 
             if (rs.next()) {
-                JOptionPane.showMessageDialog(this, "Login Successful!");
                 this.dispose(); // close login window
-                new MainGUI(username); // open main app
+                new MainLauncher(username); // open main app (same for both roles for now)
             } else {
-                JOptionPane.showMessageDialog(this, "Invalid Username or Password");
+                JOptionPane.showMessageDialog(this, "Invalid " + role + " credentials!");
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Database Error: " + ex.getMessage());
@@ -251,39 +267,5 @@ public class LoginGUI extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(LoginGUI::new);
-    }
-}
-
-// ---------------- MAIN APP ----------------
-class MainGUI extends JFrame {
-    public MainGUI(String username) {
-        setTitle("Welcome, " + username + " - Campus Forge");
-        setExtendedState(JFrame.MAXIMIZED_BOTH); // Full screen
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-
-        // Tabbed pane
-        JTabbedPane tabs = new JTabbedPane();
-
-        // Home Tab
-        JPanel homePanel = new JPanel();
-        homePanel.add(new JLabel("🏠 Home Page"));
-
-        // Search Tab
-        JPanel searchPanel = new JPanel();
-        searchPanel.add(new JLabel("🔍 Search Page"));
-
-        // Profile Tab
-        JPanel profilePanel = new JPanel();
-        profilePanel.add(new JLabel("👤 Profile Page for " + username));
-
-        // Add tabs
-        tabs.addTab("Home", homePanel);
-        tabs.addTab("Search", searchPanel);
-        tabs.addTab("Profile", profilePanel);
-
-        add(tabs);
-
-        setVisible(true);
     }
 }
